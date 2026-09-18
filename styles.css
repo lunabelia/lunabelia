@@ -34,7 +34,8 @@ img{display:block;max-width:100%}
 .hero-photo{width:100%;height:auto;filter:grayscale(1);object-fit:cover}
 .hero-index{margin:20px 0 0;font-size:10px;letter-spacing:.23em;text-transform:uppercase}
 .hero-content{padding-right:1vw}
-.eyebrow,.section-kicker{margin:0 0 18px;font-size:11px;font-weight:600;letter-spacing:.25em;text-transform:uppercase}\n.hero .eyebrow{font-size:22px;transform:translate(0,-3px)}
+.eyebrow,.section-kicker{margin:0 0 18px;font-size:11px;font-weight:600;letter-spacing:.25em;text-transform:uppercase}
+.hero .eyebrow{font-size:22px;transform:translate(0,-3px)}
 .hero h1{margin:0;color:#FD8ED8;font-family:"Medino",var(--serif);font-size:161px;font-weight:400;line-height:.82;letter-spacing:-2.2px;transform:translate(0,82px)}
 .hero-role{margin:clamp(54px,7vw,95px) 0 0;font-size:23px;letter-spacing:1.7px;line-height:1;transform:translate(0,-243px)}
 .hero-intro{max-width:650px;margin:46px 0 0;font-size:clamp(16px,1.25vw,20px);line-height:1.55;transform:translate(0,-9px)}

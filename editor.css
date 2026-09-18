@@ -1,7 +1,6 @@
-
-/* Visual editor. It is completely dormant unless the page is opened with ?edit=1. */
+/* Visual editor. Dormant unless the page is opened with ?edit=1. */
 .portfolio-editor-active [data-pe-key]{
-  cursor:pointer;
+  cursor:grab;
 }
 .portfolio-editor-active [data-pe-key]:hover{
   outline:1px dashed rgba(253,142,216,.95);
@@ -16,12 +15,24 @@
   outline:2px solid #111 !important;
   outline-offset:5px;
 }
+body.pe-dragging,
+body.pe-dragging *{
+  user-select:none !important;
+  cursor:grabbing !important;
+}
+.pe-added-text{
+  position:relative;
+  z-index:2;
+  width:max-content;
+  max-width:min(680px,90%);
+  margin:12px 0;
+}
 .pe-panel{
   position:fixed;
   z-index:100000;
   right:18px;
   top:18px;
-  width:min(330px,calc(100vw - 24px));
+  width:min(360px,calc(100vw - 24px));
   max-height:calc(100vh - 36px);
   overflow:auto;
   padding:14px;
@@ -36,16 +47,19 @@
 .pe-panel *{box-sizing:border-box}
 .pe-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
 .pe-title{font-weight:600;font-size:13px}
-.pe-close{
-  width:30px;height:30px;border:1px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;
+.pe-head-actions{display:flex;gap:6px}
+.pe-icon-btn{
+  min-width:32px;height:30px;padding:0 8px;border:1px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;
+  font:600 12px Montserrat,Arial,sans-serif;
 }
+.pe-icon-btn:disabled{opacity:.35;cursor:default}
 .pe-help{
   margin:0 0 12px;
   padding:9px 10px;
   border-radius:9px;
   background:#f7f7f7;
   font-size:11px;
-  line-height:1.4;
+  line-height:1.45;
 }
 .pe-selected-name{
   min-height:32px;
@@ -59,6 +73,7 @@
   font-size:11px;
   overflow-wrap:anywhere;
 }
+.pe-toolbar{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px}
 .pe-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
 .pe-row.one{grid-template-columns:1fr}
 .pe-field{display:grid;gap:4px}
@@ -79,12 +94,12 @@
   min-height:36px;padding:7px 9px;border:1px solid #d7d7d7;border-radius:9px;background:#fff;
   color:#111;font:600 11px Montserrat,Arial,sans-serif;cursor:pointer;
 }
-.pe-btn:hover{border-color:#111}
+.pe-btn:hover:not(:disabled){border-color:#111}
+.pe-btn:disabled{opacity:.4;cursor:default}
 .pe-btn.primary{background:#111;color:#fff;border-color:#111}
 .pe-btn.pink{background:#FD8ED8;border-color:#FD8ED8}
 .pe-btn.wide{grid-column:1/-1}
-.pe-divider{height:1px;background:#e8e8e8;margin:12px 0}
-.pe-status{margin-top:9px;font-size:10px;color:#666;line-height:1.35}
+.pe-status{margin-top:9px;font-size:10px;color:#666;line-height:1.4}
 .pe-mini{
   position:fixed;right:18px;top:18px;z-index:100000;
   border:1px solid #111;border-radius:999px;background:#fff;padding:8px 12px;

@@ -18,7 +18,7 @@ function openProject(p){
   if(!p.images.length){
     const e=document.createElement("div");e.className="modal-empty";e.innerHTML='<div class="modal-empty-art">AJAM</div><p>Emplacement prêt pour les nouveaux visuels.</p>';modalGallery.appendChild(e)
   }else p.images.forEach((src,i)=>{const f=document.createElement("figure");f.className="modal-image-wrap";const im=document.createElement("img");im.src=src;im.alt=`${p.title} — visuel ${i+1}`;im.loading="lazy";f.appendChild(im);modalGallery.appendChild(f)});
-  modal.showModal();document.body.classList.add("modal-open")
+  modal.dataset.project=p.id;modal.showModal();document.body.classList.add("modal-open");window.dispatchEvent(new CustomEvent("portfolio:project-open",{detail:{id:p.id}}))
 }
 grid.addEventListener("click",e=>{const b=e.target.closest("[data-project]");if(!b)return;const p=portfolioProjects.find(x=>x.id===b.dataset.project);if(p)openProject(p)});
 function close(){modal.close();document.body.classList.remove("modal-open")}

@@ -1,22 +1,38 @@
-
 (()=>{
   const params=new URLSearchParams(location.search);
   if(params.get("edit")!=="1") return;
 
   document.documentElement.classList.add("portfolio-editor-active");
 
-  const STORAGE_KEY="anastasiia_portfolio_visual_edits_v2";
+  const STORAGE_KEY="anastasiia_portfolio_visual_edits_v3";
+  const styleProps=["color","fontFamily","fontSize","fontWeight","letterSpacing","lineHeight","textAlign","marginTop","maxWidth","translate","display"];
+
   let edits={};
-  try{edits=JSON.parse(localStorage.getItem(STORAGE_KEY)||"{}")||{}}catch(_){edits={}}
+  let addedTexts={};
+  try{
+    const saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||"{}");
+    if(saved&&saved.edits) edits=saved.edits||{};
+    if(saved&&saved.addedTexts) addedTexts=saved.addedTexts||{};
+  }catch(_){}
+
+  const targets=new Map();
+  const baseStates=new Map();
+  const undoStack=[];
+  let selected=null;
+  let selectedKey=null;
+  let currentProjectId=null;
+  let textEditBefore=null;
+  let dragState=null;
+  let suppressNextClick=false;
 
   const staticTargets=[
     ["header.brand",".brand-name","Имя в шапке"],
     ["header.projects",'.main-nav a[href="#projets"]',"Меню — Projets"],
     ["header.about",'.main-nav a[href="#apropos"]',"Меню — À propos"],
     ["header.contact",'.main-nav a[href="#contact"]',"Меню — Contact"],
-    ["hero.eyebrow",".hero .eyebrow","Надпись над именем"],
-    ["hero.name",".hero h1","Имя"],
-    ["hero.role",".hero-role","GRAPHISTE"],
+    ["hero.eyebrow",".hero .eyebrow","Надпись над PORTFOLIO"],
+    ["hero.name",".hero h1","PORTFOLIO"],
+    ["hero.role",".hero-role","Graphiste"],
     ["hero.intro",".hero-intro","Приветствие"],
     ["hero.email",".hero-meta a","E-mail"],
     ["hero.place",".hero-meta span","Город"],
@@ -34,13 +50,111 @@
     ["contact.place",".contact-place","Место внизу"]
   ];
 
-  const targets=new Map();
+  function cloneState(){
+    return JSON.stringify({edits,addedTexts});
+  }
 
-  function addTarget(key,el,label){
+  function persist(){
+    localStorage.setItem(STORAGE_KEY,JSON.stringify({edits,addedTexts}));
+  }
+
+  function updateUndoButton(){
+    const b=document.querySelector(".pe-undo");
+    if(b) b.disabled=!undoStack.length;
+  }
+
+  function commitAction(before){
+    const after=cloneState();
+    if(before&&before!==after){
+      undoStack.push(before);
+      if(undoStack.length>80) undoStack.shift();
+      persist();
+      updateUndoButton();
+    }
+  }
+
+  function captureBase(el){
+    const style={};
+    styleProps.forEach(p=>style[p]=el.style[p]||"");
+    return {html:el.innerHTML,style};
+  }
+
+  function restoreBase(key,el){
+    const base=baseStates.get(key);
+    if(!base||!el) return;
+    el.innerHTML=base.html;
+    styleProps.forEach(p=>el.style[p]=base.style[p]||"");
+  }
+
+  function applyEdit(el,data){
+    if(!el||!data) return;
+    if(typeof data.html==="string") el.innerHTML=data.html;
+    if(data.style){
+      styleProps.forEach(p=>{
+        if(Object.prototype.hasOwnProperty.call(data.style,p)) el.style[p]=data.style[p]||"";
+      });
+    }
+  }
+
+  function addTarget(key,el,label,{freshBase=false}={}){
     if(!el) return;
     el.dataset.peKey=key;
     el.dataset.peLabel=label||key;
     targets.set(key,el);
+    if(freshBase||!baseStates.has(key)) baseStates.set(key,captureBase(el));
+    if(edits[key]) applyEdit(el,edits[key]);
+  }
+
+  function removeAddedElements(){
+    document.querySelectorAll("[data-pe-added='1']").forEach(el=>el.remove());
+    [...targets.keys()].filter(k=>k.startsWith("added.")).forEach(k=>{
+      targets.delete(k);
+      baseStates.delete(k);
+    });
+  }
+
+  function rebuildAddedTexts(){
+    removeAddedElements();
+    Object.entries(addedTexts).forEach(([id,spec])=>{
+      const key="added."+id;
+      const anchor=targets.get(spec.anchorKey);
+      if(!anchor||!document.contains(anchor)) return;
+      const el=document.createElement("p");
+      el.className="pe-added-text";
+      el.dataset.peAdded="1";
+      el.dataset.peScope=spec.scope||"page";
+      const data=edits[key]||{html:"Новый текст",style:{}};
+      el.innerHTML=data.html||"Новый текст";
+      if(data.style) styleProps.forEach(p=>{if(data.style[p]) el.style[p]=data.style[p]});
+      anchor.insertAdjacentElement("afterend",el);
+      addTarget(key,el,"Добавленный текст",{freshBase:true});
+    });
+  }
+
+  function applyAll(){
+    targets.forEach((el,key)=>{
+      if(key.startsWith("added.")) return;
+      restoreBase(key,el);
+      if(edits[key]) applyEdit(el,edits[key]);
+    });
+    rebuildAddedTexts();
+    if(selectedKey&&targets.has(selectedKey)) select(targets.get(selectedKey));
+    else select(null);
+  }
+
+  function undo(){
+    if(!undoStack.length) return;
+    if(selected?.isContentEditable) selected.contentEditable="false";
+    const snap=undoStack.pop();
+    try{
+      const state=JSON.parse(snap);
+      edits=state.edits||{};
+      addedTexts=state.addedTexts||{};
+    }catch(_){return}
+    persist();
+    applyAll();
+    updateUndoButton();
+    flashStatus("Последнее действие отменено ↶");
   }
 
   staticTargets.forEach(([k,s,l])=>addTarget(k,document.querySelector(s),l));
@@ -61,35 +175,22 @@
 
   document.querySelectorAll(".skills span").forEach((el,i)=>addTarget("about.skill."+i,el,"Навык "+(i+1)));
 
-  const styleProps=["color","fontFamily","fontSize","fontWeight","letterSpacing","lineHeight","textAlign","marginTop","maxWidth","transform","display"];
-
-  function applyEdit(el,data){
-    if(!el||!data) return;
-    if(typeof data.html==="string") el.innerHTML=data.html;
-    if(data.style){
-      styleProps.forEach(p=>{
-        if(Object.prototype.hasOwnProperty.call(data.style,p)) el.style[p]=data.style[p]||"";
-      });
-    }
-  }
-
-  targets.forEach((el,key)=>applyEdit(el,edits[key]));
-
-  let selected=null;
-  let selectedKey=null;
-
   const panel=document.createElement("aside");
   panel.className="pe-panel";
   panel.innerHTML=`
     <div class="pe-head">
       <div class="pe-title">✦ Редактор сайта</div>
-      <button class="pe-close" type="button" title="Свернуть">×</button>
+      <div class="pe-head-actions">
+        <button class="pe-icon-btn pe-undo" type="button" title="Отменить последнее действие (Ctrl+Z)" disabled>↶</button>
+        <button class="pe-icon-btn pe-close" type="button" title="Свернуть">×</button>
+      </div>
     </div>
-    <p class="pe-help">Кликни по тексту на странице. Двойной клик — сразу редактировать текст.</p>
+    <p class="pe-help"><b>Хватай текст мышкой и тащи.</b> Клик — выбрать, двойной клик — редактировать. Чтобы войти внутрь проекта, кликни по его картинке.</p>
     <div class="pe-selected-name">Ничего не выбрано</div>
 
-    <div class="pe-row one">
+    <div class="pe-toolbar">
       <button class="pe-btn pink pe-edit-text" type="button">Редактировать текст</button>
+      <button class="pe-btn pe-add-text" type="button">＋ Новый текст</button>
     </div>
 
     <div class="pe-row">
@@ -102,7 +203,7 @@
     </div>
 
     <div class="pe-row">
-      <div class="pe-field"><label>Размер, px</label><input type="number" data-control="fontSize" min="6" max="240" step="1"></div>
+      <div class="pe-field"><label>Размер, px</label><input type="number" data-control="fontSize" min="6" max="260" step="1"></div>
       <div class="pe-field"><label>Жирность</label><select data-control="fontWeight">
         <option value="">Как сейчас</option><option value="400">400</option><option value="500">500</option><option value="600">600</option><option value="700">700</option>
       </select></div>
@@ -119,8 +220,8 @@
     </div>
 
     <div class="pe-row">
-      <div class="pe-field"><label>Сдвиг X, px</label><input type="number" data-control="x" min="-500" max="500" step="1"></div>
-      <div class="pe-field"><label>Сдвиг Y, px</label><input type="number" data-control="y" min="-500" max="500" step="1"></div>
+      <div class="pe-field"><label>Сдвиг X, px</label><input type="number" data-control="x" min="-1000" max="1000" step="1"></div>
+      <div class="pe-field"><label>Сдвиг Y, px</label><input type="number" data-control="y" min="-1000" max="1000" step="1"></div>
     </div>
 
     <div class="pe-row">
@@ -134,11 +235,12 @@
 
     <div class="pe-actions">
       <button class="pe-btn pe-reset-one" type="button">Сбросить элемент</button>
-      <button class="pe-btn primary pe-save" type="button">Сохранить</button>
+      <button class="pe-btn pe-delete-text" type="button" disabled>Удалить новый текст</button>
+      <button class="pe-btn primary pe-save wide" type="button">Сохранить</button>
       <button class="pe-btn pe-download wide" type="button">Скачать правки для публикации</button>
       <button class="pe-btn pe-reset-all wide" type="button">Сбросить все локальные правки</button>
     </div>
-    <div class="pe-status">«Сохранить» сохраняет визуальную версию только в этом браузере. Файл из «Скачать правки» можно отправить в ChatGPT, чтобы опубликовать её на GitHub.</div>
+    <div class="pe-status">Правки автоматически сохраняются в этом браузере. Ctrl+Z или ↶ отменяет последнее действие. Для публикации скачай файл и пришли его в ChatGPT.</div>
   `;
   document.body.appendChild(panel);
 
@@ -153,10 +255,19 @@
   const controls={};
   panel.querySelectorAll("[data-control]").forEach(el=>controls[el.dataset.control]=el);
 
+  function flashStatus(message){
+    const status=panel.querySelector(".pe-status");
+    const old=status.textContent;
+    status.textContent=message;
+    clearTimeout(flashStatus.t);
+    flashStatus.t=setTimeout(()=>status.textContent=old,1800);
+  }
+
   function pxNum(v){
     const n=parseFloat(v);
     return Number.isFinite(n)?n:"";
   }
+
   function rgbToHex(rgb){
     if(!rgb) return "#111111";
     if(rgb.startsWith("#")) return rgb.slice(0,7);
@@ -164,24 +275,35 @@
     if(!m) return "#111111";
     return "#"+[m[1],m[2],m[3]].map(x=>(+x).toString(16).padStart(2,"0")).join("");
   }
+
   function currentTranslate(el){
-    const raw=el.style.transform||"";
-    const m=raw.match(/translate\(\s*(-?[\d.]+)px\s*,\s*(-?[\d.]+)px\s*\)/);
-    return m?[parseFloat(m[1]),parseFloat(m[2])]:[0,0];
+    const raw=(el.style.translate||"").trim();
+    if(!raw||raw==="none") return [0,0];
+    const nums=raw.match(/-?[\d.]+/g)||[];
+    return [parseFloat(nums[0])||0,parseFloat(nums[1])||0];
+  }
+
+  function recordSelected(){
+    if(!selected||!selectedKey) return;
+    const style={};
+    styleProps.forEach(p=>{if(selected.style[p]) style[p]=selected.style[p]});
+    edits[selectedKey]={html:selected.innerHTML,style};
   }
 
   function syncControls(){
+    const del=panel.querySelector(".pe-delete-text");
     if(!selected){
       nameBox.textContent="Ничего не выбрано";
+      del.disabled=true;
       return;
     }
     const cs=getComputedStyle(selected);
     nameBox.textContent=selected.dataset.peLabel+"  ·  "+selectedKey;
-    controls.fontFamily.value=selected.style.fontFamily.replace(/["']/g,"").split(",")[0]||"";
-    if(!["","Montserrat","Medino"].includes(controls.fontFamily.value)) controls.fontFamily.value="";
+    const fam=(selected.style.fontFamily||cs.fontFamily||"").replace(/["']/g,"");
+    controls.fontFamily.value=fam.includes("Medino")?"Medino":fam.includes("Montserrat")?"Montserrat":"";
     controls.color.value=rgbToHex(selected.style.color||cs.color);
     controls.fontSize.value=pxNum(selected.style.fontSize||cs.fontSize);
-    controls.fontWeight.value=selected.style.fontWeight||"";
+    controls.fontWeight.value=["400","500","600","700"].includes(String(selected.style.fontWeight||cs.fontWeight))?String(selected.style.fontWeight||cs.fontWeight):"";
     controls.letterSpacing.value=cs.letterSpacing==="normal"?"":pxNum(selected.style.letterSpacing||cs.letterSpacing);
     controls.lineHeight.value=cs.lineHeight==="normal"?"":(parseFloat(cs.lineHeight)/parseFloat(cs.fontSize)).toFixed(2);
     controls.marginTop.value=pxNum(selected.style.marginTop||cs.marginTop);
@@ -189,80 +311,42 @@
     controls.textAlign.value=selected.style.textAlign||"";
     controls.display.value=selected.style.display==="none"?"none":"";
     const [x,y]=currentTranslate(selected);
-    controls.x.value=x; controls.y.value=y;
+    controls.x.value=x;
+    controls.y.value=y;
+    del.disabled=!selectedKey.startsWith("added.");
   }
 
   function select(el){
-    if(selected) selected.classList.remove("pe-selected");
-    selected=el;
+    if(selected&&selected!==el) selected.classList.remove("pe-selected");
+    selected=el||null;
     selectedKey=el?.dataset.peKey||null;
     if(selected) selected.classList.add("pe-selected");
     syncControls();
   }
 
-  function recordSelected(){
-    if(!selected||!selectedKey) return;
-    const style={};
-    styleProps.forEach(p=>{
-      if(selected.style[p]) style[p]=selected.style[p];
-    });
-    edits[selectedKey]={html:selected.innerHTML,style};
+  function startTextEdit(el){
+    if(!el) return;
+    select(el);
+    if(!el.isContentEditable) textEditBefore=cloneState();
+    el.contentEditable="true";
+    el.focus();
+    const r=document.createRange();
+    r.selectNodeContents(el);
+    r.collapse(false);
+    const s=window.getSelection();
+    s.removeAllRanges();
+    s.addRange(r);
   }
 
-  function saveLocal(message="Сохранено локально ✓"){
-    if(selected) recordSelected();
-    localStorage.setItem(STORAGE_KEY,JSON.stringify(edits));
-    const status=panel.querySelector(".pe-status");
-    const old=status.textContent;
-    status.textContent=message;
-    setTimeout(()=>status.textContent=old,1800);
+  function finishTextEdit(el){
+    if(!el?.isContentEditable) return;
+    el.contentEditable="false";
+    if(el===selected) recordSelected();
+    if(textEditBefore){
+      commitAction(textEditBefore);
+      textEditBefore=null;
+    }
   }
-
-  document.addEventListener("click",e=>{
-    if(e.target.closest(".pe-panel,.pe-mini")) return;
-    const target=e.target.closest("[data-pe-key]");
-    if(target){
-      e.preventDefault();
-      e.stopPropagation();
-      select(target);
-    }
-  },true);
-
-  document.addEventListener("dblclick",e=>{
-    if(e.target.closest(".pe-panel,.pe-mini")) return;
-    const target=e.target.closest("[data-pe-key]");
-    if(!target) return;
-    e.preventDefault();e.stopPropagation();
-    select(target);
-    target.contentEditable="true";
-    target.focus();
-  },true);
-
-  document.addEventListener("keydown",e=>{
-    if(e.key==="Escape"&&selected?.isContentEditable){
-      selected.contentEditable="false";
-      recordSelected();
-    }
-    if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="s"){
-      e.preventDefault();
-      saveLocal();
-    }
-  });
-
-  panel.querySelector(".pe-edit-text").addEventListener("click",()=>{
-    if(!selected) return;
-    selected.contentEditable="true";
-    selected.focus();
-    const r=document.createRange();r.selectNodeContents(selected);r.collapse(false);
-    const s=window.getSelection();s.removeAllRanges();s.addRange(r);
-  });
-
-  document.addEventListener("focusout",e=>{
-    if(e.target?.matches?.("[data-pe-key][contenteditable='true']")){
-      e.target.contentEditable="false";
-      recordSelected();
-    }
-  });
 
   function setStyle(prop,value){
     if(!selected) return;
@@ -270,64 +354,308 @@
     recordSelected();
   }
 
-  controls.fontFamily.addEventListener("change",()=>setStyle("fontFamily",controls.fontFamily.value?('"'+controls.fontFamily.value+'"'):""));
-  controls.color.addEventListener("input",()=>setStyle("color",controls.color.value));
-  controls.fontSize.addEventListener("input",()=>setStyle("fontSize",controls.fontSize.value?controls.fontSize.value+"px":""));
-  controls.fontWeight.addEventListener("change",()=>setStyle("fontWeight",controls.fontWeight.value));
-  controls.letterSpacing.addEventListener("input",()=>setStyle("letterSpacing",controls.letterSpacing.value!==""?controls.letterSpacing.value+"px":""));
-  controls.lineHeight.addEventListener("input",()=>setStyle("lineHeight",controls.lineHeight.value));
-  controls.marginTop.addEventListener("input",()=>setStyle("marginTop",controls.marginTop.value!==""?controls.marginTop.value+"px":""));
-  controls.maxWidth.addEventListener("input",()=>setStyle("maxWidth",controls.maxWidth.value?controls.maxWidth.value+"px":""));
-  controls.textAlign.addEventListener("change",()=>setStyle("textAlign",controls.textAlign.value));
-  controls.display.addEventListener("change",()=>setStyle("display",controls.display.value));
-
-  function updateTranslate(){
+  function setTranslate(x,y){
     if(!selected) return;
-    const x=parseFloat(controls.x.value)||0,y=parseFloat(controls.y.value)||0;
-    setStyle("transform",(x||y)?`translate(${x}px, ${y}px)`:"");
+    const xx=parseFloat(x)||0;
+    const yy=parseFloat(y)||0;
+    setStyle("translate",(xx||yy)?xx+"px "+yy+"px":"");
   }
-  controls.x.addEventListener("input",updateTranslate);
-  controls.y.addEventListener("input",updateTranslate);
 
-  panel.querySelector(".pe-save").addEventListener("click",()=>saveLocal());
+  function clearModalTargets(){
+    [...targets.keys()].filter(k=>k.startsWith("modal.")).forEach(k=>{
+      targets.delete(k);
+      baseStates.delete(k);
+    });
+    document.querySelectorAll("#project-modal [data-pe-key]").forEach(el=>{
+      if(el.dataset.peKey?.startsWith("modal.")){
+        delete el.dataset.peKey;
+        delete el.dataset.peLabel;
+      }
+    });
+  }
+
+  function registerModalProject(id){
+    currentProjectId=id;
+    if(selectedKey?.startsWith("modal.")) select(null);
+    clearModalTargets();
+    document.querySelectorAll("#project-modal [data-pe-added='1']").forEach(el=>el.remove());
+
+    const modalTitle=document.getElementById("modal-title");
+    const modalMeta=document.getElementById("modal-meta");
+    const modalDescription=document.getElementById("modal-description");
+    [modalTitle,modalMeta,modalDescription].forEach(el=>{
+      styleProps.forEach(p=>el.style[p]="");
+    });
+
+    addTarget("modal."+id+".meta",modalMeta,"Внутри проекта — строка сверху",{freshBase:true});
+    addTarget("modal."+id+".title",modalTitle,"Внутри проекта — заголовок",{freshBase:true});
+    addTarget("modal."+id+".description",modalDescription,"Внутри проекта — описание",{freshBase:true});
+    rebuildAddedTexts();
+  }
+
+  window.addEventListener("portfolio:project-open",e=>{
+    const id=e.detail?.id;
+    if(id) registerModalProject(id);
+  });
+
+  document.getElementById("project-modal")?.addEventListener("close",()=>{
+    if(selectedKey?.startsWith("modal.")||selectedKey?.startsWith("added.")) select(null);
+    currentProjectId=null;
+  });
+
+  document.addEventListener("click",e=>{
+    if(e.target.closest(".pe-panel,.pe-mini")) return;
+
+    if(suppressNextClick){
+      suppressNextClick=false;
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+
+    const target=e.target.closest("[data-pe-key]");
+    if(target){
+      e.preventDefault();
+      e.stopPropagation();
+      select(target);
+      return;
+    }
+
+    if(e.target.closest(".project-visual,.modal-close")) return;
+
+    if(e.target.closest("a,button")){
+      e.preventDefault();
+    }
+  },true);
+
+  document.addEventListener("dblclick",e=>{
+    if(e.target.closest(".pe-panel,.pe-mini")) return;
+    const target=e.target.closest("[data-pe-key]");
+    if(!target) return;
+    e.preventDefault();
+    e.stopPropagation();
+    startTextEdit(target);
+  },true);
+
+  document.addEventListener("pointerdown",e=>{
+    if(e.button!==0||e.target.closest(".pe-panel,.pe-mini")) return;
+    const target=e.target.closest("[data-pe-key]");
+    if(!target||target.isContentEditable) return;
+    const [tx,ty]=currentTranslate(target);
+    dragState={
+      el:target,
+      key:target.dataset.peKey,
+      startX:e.clientX,
+      startY:e.clientY,
+      tx,ty,
+      moved:false,
+      before:cloneState()
+    };
+  },true);
+
+  document.addEventListener("pointermove",e=>{
+    if(!dragState) return;
+    const dx=e.clientX-dragState.startX;
+    const dy=e.clientY-dragState.startY;
+    if(!dragState.moved&&Math.hypot(dx,dy)<4) return;
+    dragState.moved=true;
+    document.body.classList.add("pe-dragging");
+    select(dragState.el);
+    dragState.el.style.translate=(dragState.tx+dx)+"px "+(dragState.ty+dy)+"px";
+    recordSelected();
+    syncControls();
+    e.preventDefault();
+  },{capture:true,passive:false});
+
+  document.addEventListener("pointerup",()=>{
+    if(!dragState) return;
+    if(dragState.moved){
+      recordSelected();
+      commitAction(dragState.before);
+      suppressNextClick=true;
+    }
+    document.body.classList.remove("pe-dragging");
+    dragState=null;
+  },true);
+
+  document.addEventListener("input",e=>{
+    const el=e.target.closest?.("[data-pe-key][contenteditable='true']");
+    if(el&&el===selected) recordSelected();
+  });
+
+  document.addEventListener("focusout",e=>{
+    const el=e.target.closest?.("[data-pe-key][contenteditable='true']");
+    if(el) finishTextEdit(el);
+  });
+
+  document.addEventListener("keydown",e=>{
+    if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="z"&&!e.shiftKey){
+      e.preventDefault();
+      if(selected?.isContentEditable) finishTextEdit(selected);
+      undo();
+      return;
+    }
+    if(e.key==="Escape"&&selected?.isContentEditable){
+      finishTextEdit(selected);
+      return;
+    }
+    if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="s"){
+      e.preventDefault();
+      if(selected?.isContentEditable) finishTextEdit(selected);
+      persist();
+      flashStatus("Сохранено ✓");
+    }
+  });
+
+  panel.querySelector(".pe-edit-text").addEventListener("click",()=>startTextEdit(selected));
+
+  panel.querySelector(".pe-add-text").addEventListener("click",()=>{
+    const before=cloneState();
+    let anchorKey=selectedKey;
+    if(!anchorKey||!targets.has(anchorKey)){
+      anchorKey=currentProjectId?"modal."+currentProjectId+".description":"hero.intro";
+    }
+    const id=Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+    const key="added."+id;
+    addedTexts[id]={anchorKey,scope:currentProjectId?"modal:"+currentProjectId:"page"};
+    edits[key]={
+      html:"Новый текст",
+      style:{fontFamily:"Montserrat",fontSize:"16px",fontWeight:"400"}
+    };
+    rebuildAddedTexts();
+    const el=targets.get(key);
+    select(el);
+    commitAction(before);
+    startTextEdit(el);
+  });
+
+  panel.querySelector(".pe-delete-text").addEventListener("click",()=>{
+    if(!selectedKey?.startsWith("added.")) return;
+    const before=cloneState();
+    const id=selectedKey.slice("added.".length);
+    delete edits[selectedKey];
+    delete addedTexts[id];
+    select(null);
+    rebuildAddedTexts();
+    commitAction(before);
+  });
+
+  const numericLive=[
+    ["color",v=>setStyle("color",v)],
+    ["fontSize",v=>setStyle("fontSize",v?v+"px":"")],
+    ["letterSpacing",v=>setStyle("letterSpacing",v!==""?v+"px":"")],
+    ["lineHeight",v=>setStyle("lineHeight",v)],
+    ["marginTop",v=>setStyle("marginTop",v!==""?v+"px":"")],
+    ["maxWidth",v=>setStyle("maxWidth",v?v+"px":"")]
+  ];
+  const inputSnapshots=new WeakMap();
+  numericLive.forEach(([name,fn])=>{
+    const el=controls[name];
+    el.addEventListener("focus",()=>inputSnapshots.set(el,cloneState()));
+    el.addEventListener("input",()=>fn(el.value));
+    el.addEventListener("change",()=>{
+      const before=inputSnapshots.get(el);
+      if(before) commitAction(before);
+      inputSnapshots.delete(el);
+    });
+  });
+
+  [controls.x,controls.y].forEach(el=>{
+    el.addEventListener("focus",()=>inputSnapshots.set(el,cloneState()));
+    el.addEventListener("input",()=>setTranslate(controls.x.value,controls.y.value));
+    el.addEventListener("change",()=>{
+      const before=inputSnapshots.get(el);
+      if(before) commitAction(before);
+      inputSnapshots.delete(el);
+    });
+  });
+
+  controls.fontFamily.addEventListener("change",()=>{
+    const before=cloneState();
+    setStyle("fontFamily",controls.fontFamily.value?'"'+controls.fontFamily.value+'"':"");
+    commitAction(before);
+  });
+  controls.fontWeight.addEventListener("change",()=>{
+    const before=cloneState();
+    setStyle("fontWeight",controls.fontWeight.value);
+    commitAction(before);
+  });
+  controls.textAlign.addEventListener("change",()=>{
+    const before=cloneState();
+    setStyle("textAlign",controls.textAlign.value);
+    commitAction(before);
+  });
+  controls.display.addEventListener("change",()=>{
+    const before=cloneState();
+    setStyle("display",controls.display.value);
+    commitAction(before);
+  });
+
+  panel.querySelector(".pe-undo").addEventListener("click",undo);
 
   panel.querySelector(".pe-reset-one").addEventListener("click",()=>{
     if(!selectedKey||!selected) return;
-    delete edits[selectedKey];
-    location.reload();
+    const before=cloneState();
+    if(selectedKey.startsWith("added.")){
+      const id=selectedKey.slice("added.".length);
+      delete edits[selectedKey];
+      delete addedTexts[id];
+      select(null);
+      rebuildAddedTexts();
+    }else{
+      delete edits[selectedKey];
+      restoreBase(selectedKey,selected);
+      select(selected);
+    }
+    commitAction(before);
+  });
+
+  panel.querySelector(".pe-save").addEventListener("click",()=>{
+    if(selected?.isContentEditable) finishTextEdit(selected);
+    persist();
+    flashStatus("Сохранено ✓");
   });
 
   panel.querySelector(".pe-reset-all").addEventListener("click",()=>{
     if(!confirm("Точно удалить все локальные правки?")) return;
-    localStorage.removeItem(STORAGE_KEY);
-    location.reload();
+    const before=cloneState();
+    edits={};
+    addedTexts={};
+    applyAll();
+    commitAction(before);
+    flashStatus("Все локальные правки сброшены");
   });
 
   panel.querySelector(".pe-download").addEventListener("click",()=>{
-    saveLocal("Правки подготовлены ✓");
+    if(selected?.isContentEditable) finishTextEdit(selected);
+    persist();
     const payload={
-      format:"anastasiia-portfolio-edits-v1",
+      format:"anastasiia-portfolio-edits-v2",
+      editorVersion:3,
       createdAt:new Date().toISOString(),
       page:location.pathname,
-      edits
+      edits,
+      addedTexts
     };
     const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
     const url=URL.createObjectURL(blob);
     const a=document.createElement("a");
-    a.href=url;a.download="portfolio-edits.json";a.click();
+    a.href=url;
+    a.download="portfolio-edits.json";
+    a.click();
     setTimeout(()=>URL.revokeObjectURL(url),1000);
+    flashStatus("Файл правок скачан ✓");
   });
 
   panel.querySelector(".pe-close").addEventListener("click",()=>{
-    panel.hidden=true;mini.hidden=false;
+    panel.hidden=true;
+    mini.hidden=false;
   });
-  mini.addEventListener("click",()=>{mini.hidden=true;panel.hidden=false});
+  mini.addEventListener("click",()=>{
+    mini.hidden=true;
+    panel.hidden=false;
+  });
 
-  // Prevent accidental navigation while editing.
-  document.addEventListener("click",e=>{
-    if(e.target.closest(".pe-panel,.pe-mini")) return;
-    if(e.target.closest("a,button")&&!e.target.closest("[data-pe-key]")){
-      e.preventDefault();
-    }
-  },true);
+  rebuildAddedTexts();
+  updateUndoButton();
 })();
