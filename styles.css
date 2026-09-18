@@ -1,6 +1,6 @@
-:root{
-  --ink:#111;--paper:#fff;--soft:#f6f4f3;--pink:#df82b9;--line:rgba(17,17,17,.22);
-  --serif:"Bodoni Moda","Bodoni 72",Didot,"Times New Roman",serif;
+@font-face{font-family:"Medino";src:url("assets/fonts/Medino-Regular.otf") format("opentype");font-weight:400;font-style:normal;font-display:swap}\n:root{
+  --ink:#111;--paper:#fff;--soft:#f6f4f3;--pink:#FD8ED8;--line:rgba(17,17,17,.22);
+  --serif:"Medino","Bodoni 72",Didot,"Times New Roman",serif;
   --sans:"Montserrat","Avenir Next",Avenir,Helvetica,Arial,sans-serif;
   --page:min(92vw,1420px)
 }
@@ -28,9 +28,9 @@ img{display:block;max-width:100%}
 .hero-index{margin:20px 0 0;font-size:10px;letter-spacing:.23em;text-transform:uppercase}
 .hero-content{padding-right:1vw}
 .eyebrow,.section-kicker{margin:0 0 18px;font-size:11px;font-weight:600;letter-spacing:.25em;text-transform:uppercase}
-.hero h1{margin:0;font-family:var(--serif);font-size:clamp(72px,8.4vw,144px);font-weight:400;line-height:.82;letter-spacing:-.055em}
+.hero h1{margin:0;color:#FD8ED8;font-family:var(--serif);font-size:clamp(72px,8.4vw,144px);font-weight:400;line-height:.82;letter-spacing:-.055em}
 .hero-role{margin:clamp(54px,7vw,95px) 0 0;font-size:clamp(18px,2vw,28px);letter-spacing:.35em;line-height:1}
-.hero-intro{max-width:650px;margin:46px 0 0;font-size:clamp(16px,1.25vw,20px);line-height:1.55}
+.hero-intro{max-width:650px;margin:58px 0 0;font-size:clamp(16px,1.25vw,20px);line-height:1.55}
 .hero-meta{margin-top:44px;padding-top:18px;display:grid;grid-template-columns:repeat(3,max-content);gap:14px 36px;border-top:1px solid var(--line);font-size:11px;letter-spacing:.06em}
 .hero-meta a:hover,.contact-mail:hover{color:var(--pink)}
 .scroll-link{display:inline-flex;gap:10px;align-items:center;margin-top:48px;font-size:11px;font-weight:600;letter-spacing:.15em;text-transform:uppercase}
