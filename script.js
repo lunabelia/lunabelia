@@ -7,7 +7,7 @@ const modalGallery=document.getElementById("modal-gallery");
 const modalClose=document.getElementById("modal-close");
 
 function placeholder(){return `<div class="placeholder-cover" aria-hidden="true"><span class="placeholder-a">A</span><span class="placeholder-b">J</span><p>IDENTITÉ VISUELLE<br>PICTOGRAMMES<br>PRINT + DIGITAL</p></div>`}
-function card(p){const a=document.createElement("article");a.className="project-card";a.innerHTML=`<button class="project-button" type="button" data-project="${p.id}"><div class="project-visual">${p.placeholder?placeholder():`<img src="${p.cover}" alt="Aperçu du projet ${p.title}" loading="lazy">`}</div><div class="project-info"><div class="project-line"><span>${p.number}</span><span>${p.year}</span></div><h3>${p.title}</h3><p class="project-type">${p.type}</p><p class="project-summary">${p.summary}</p><span class="project-open">Voir le projet ↗</span></div></button>`;return a}
+function card(p){const a=document.createElement("article");a.className="project-card";a.innerHTML=`<button class="project-button" type="button" data-project="${p.id}"><div class="project-visual">${p.placeholder?placeholder():`<img src="${p.cover}" alt="Aperçu du projet ${p.title}" loading="lazy">`}</div><div class="project-info"><div class="project-line"><span>${p.number}</span><span>${p.year}</span></div><h3>${p.title}</h3><p class="project-type">${p.type}</p><p class="project-summary" style="display:none">${p.summary}</p><span class="project-open" style="display:none">Voir le projet ↗</span></div></button>`;return a}
 portfolioProjects.forEach(p=>grid.appendChild(card(p)));
 
 function openProject(p){

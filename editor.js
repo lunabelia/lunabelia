@@ -5,7 +5,7 @@
 
   document.documentElement.classList.add("portfolio-editor-active");
 
-  const STORAGE_KEY="anastasiia_portfolio_visual_edits_v1";
+  const STORAGE_KEY="anastasiia_portfolio_visual_edits_v2";
   let edits={};
   try{edits=JSON.parse(localStorage.getItem(STORAGE_KEY)||"{}")||{}}catch(_){edits={}}
 
