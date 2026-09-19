@@ -114,3 +114,27 @@ img{display:block;max-width:100%}
   .hero-intro{font-size:16px}
   .projects-section,.about-section,.contact-section{padding-top:90px;padding-bottom:100px}
 }
+
+
+/* v4 — portfolio refinements */
+.brand{gap:0}
+.brand-logo{
+  display:block;
+  width:auto;
+  height:40px;
+  max-width:min(250px,45vw);
+  object-fit:contain;
+}
+.hero .eyebrow{font-size:21px}
+.hero h1{translate:-4px 5px}
+.hero-role{translate:-1px 1px}
+
+.modal-header h2{color:#FD8ED8}
+.project-modal[data-project="ajam"] #modal-title{translate:2px 16px}
+.project-modal[data-project="femineco"] #modal-title{translate:0 11px}
+.project-modal[data-project="banners"] #modal-title{translate:2px 5px}
+.project-modal[data-project="presentations"] #modal-title{translate:2px 10px}
+
+@media(max-width:620px){
+  .brand-logo{height:34px;max-width:46vw}
+}

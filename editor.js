@@ -4,7 +4,7 @@
 
   document.documentElement.classList.add("portfolio-editor-active");
 
-  const STORAGE_KEY="anastasiia_portfolio_visual_edits_v3";
+  const STORAGE_KEY="anastasiia_portfolio_visual_edits_v4";
   const styleProps=["color","fontFamily","fontSize","fontWeight","letterSpacing","lineHeight","textAlign","marginTop","maxWidth","translate","display"];
 
   let edits={};
@@ -26,7 +26,6 @@
   let suppressNextClick=false;
 
   const staticTargets=[
-    ["header.brand",".brand-name","Имя в шапке"],
     ["header.projects",'.main-nav a[href="#projets"]',"Меню — Projets"],
     ["header.about",'.main-nav a[href="#apropos"]',"Меню — À propos"],
     ["header.contact",'.main-nav a[href="#contact"]',"Меню — Contact"],
@@ -383,10 +382,6 @@
     const modalTitle=document.getElementById("modal-title");
     const modalMeta=document.getElementById("modal-meta");
     const modalDescription=document.getElementById("modal-description");
-    [modalTitle,modalMeta,modalDescription].forEach(el=>{
-      styleProps.forEach(p=>el.style[p]="");
-    });
-
     addTarget("modal."+id+".meta",modalMeta,"Внутри проекта — строка сверху",{freshBase:true});
     addTarget("modal."+id+".title",modalTitle,"Внутри проекта — заголовок",{freshBase:true});
     addTarget("modal."+id+".description",modalDescription,"Внутри проекта — описание",{freshBase:true});
@@ -631,7 +626,7 @@
     persist();
     const payload={
       format:"anastasiia-portfolio-edits-v2",
-      editorVersion:3,
+      editorVersion:4,
       createdAt:new Date().toISOString(),
       page:location.pathname,
       edits,
