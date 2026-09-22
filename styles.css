@@ -138,3 +138,6 @@ img{display:block;max-width:100%}
 @media(max-width:620px){
   .brand-logo{height:34px;max-width:46vw}
 }
+
+/* Preserve the approved photograph; frame it to match the 16:9 project slides. */
+.project-modal[data-project="femineco"] img[src$="femineco-mockup-approved.png"]{aspect-ratio:16/9;object-fit:cover;object-position:50% 50%}
