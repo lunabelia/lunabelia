@@ -57,6 +57,9 @@ img{display:block;max-width:100%}
 .project-button[data-project="ajam"] .project-visual{display:grid;place-items:center;background:#fff}
 .project-button[data-project="ajam"] .project-visual img{display:block;width:100%;height:auto;max-height:100%;object-fit:contain;outline:1px solid #333;outline-offset:-1px}
 .project-button[data-project="ajam"]:hover .project-visual img{transform:none}
+.project-button[data-project="femineco"] .project-visual{background:#fff}
+.project-button[data-project="femineco"] .project-visual img{position:absolute;top:5%;left:0;width:100%;height:90%;object-fit:cover;object-position:center}
+.project-button[data-project="femineco"]:hover .project-visual img{transform:none}
 .project-info{padding-top:18px}
 .project-line{display:flex;justify-content:space-between;gap:20px;padding-bottom:12px;border-bottom:1px solid var(--line);font-size:10px;letter-spacing:.18em;text-transform:uppercase}
 .project-info h3{margin:18px 0 6px;color:#FD8ED8;font-family:"Medino",var(--serif);font-size:clamp(34px,4vw,58px);font-weight:400;line-height:1}
@@ -68,15 +71,8 @@ img{display:block;max-width:100%}
 .placeholder-a{left:7%;top:10%}.placeholder-b{right:8%;bottom:9%;color:var(--pink)}
 .placeholder-cover p{position:absolute;left:8%;bottom:8%;z-index:2;margin:0;font-size:10px;letter-spacing:.18em;line-height:1.7}
 
-.about-section{width:var(--page);margin:0 auto;padding:120px 0;display:grid;grid-template-columns:1fr 2fr;gap:60px;border-top:1px solid var(--line)}
-.about-label h2{margin:0;font-family:"Medino",var(--serif);font-size:clamp(52px,6vw,92px);font-weight:400;line-height:1}
-.about-copy{max-width:850px}
-.about-lead{margin-top:0;font-family:"Medino",var(--serif);font-size:clamp(30px,3vw,48px);line-height:1.18}
-.skills{display:flex;flex-wrap:wrap;gap:10px;margin-top:38px}
-.skills span{padding:8px 12px;border:1px solid var(--line);font-size:11px;letter-spacing:.06em}
-
 .contact-section{width:var(--page);margin:0 auto;padding:120px 0 130px;border-top:1px solid var(--line)}
-.contact-section h2{margin:0 0 34px;font-family:"Medino",var(--serif);font-size:clamp(68px,10vw,150px);font-weight:400;line-height:.82}
+.contact-section h2{margin:0 0 34px;color:#FD8ED8;font-family:"Medino",var(--serif);font-size:clamp(68px,10vw,150px);font-weight:400;line-height:1.2}
 .contact-mail{font-size:clamp(20px,2.3vw,34px)}
 .contact-place{margin:18px 0 0;color:#666}
 .site-footer{width:var(--page);margin:0 auto;padding:25px 0 40px;display:flex;justify-content:space-between;gap:20px;border-top:1px solid var(--line);font-size:11px;letter-spacing:.08em;text-transform:uppercase}
@@ -102,7 +98,7 @@ img{display:block;max-width:100%}
   .hero h1{font-size:clamp(64px,15vw,110px)}
   .hero-role{margin-top:45px}
   .hero-meta{grid-template-columns:1fr}
-  .section-heading,.about-section{grid-template-columns:1fr}
+  .section-heading{grid-template-columns:1fr}
   .section-heading .section-kicker,.section-heading h2,.section-note{grid-column:1}
   .projects-grid{grid-template-columns:1fr}
 }
@@ -111,13 +107,13 @@ img{display:block;max-width:100%}
   .project-modal[data-project="ajam"] .modal-gallery{gap:14px}
   .brand-name{display:none}
   .main-nav{gap:16px;font-size:10px}
-  .hero,.projects-section,.about-section,.contact-section,.site-footer{width:90vw}
+  .hero,.projects-section,.contact-section,.site-footer{width:90vw}
   .hero{padding-top:28px}
   .hero-photo-wrap{width:100%}
   .hero h1{font-size:17vw}
   .hero-role{font-size:17px;letter-spacing:.25em}
   .hero-intro{font-size:16px}
-  .projects-section,.about-section,.contact-section{padding-top:90px;padding-bottom:100px}
+  .projects-section,.contact-section{padding-top:90px;padding-bottom:100px}
 }
 
 

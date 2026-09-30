@@ -27,7 +27,6 @@
 
   const staticTargets=[
     ["header.projects",'.main-nav a[href="#projets"]',"Меню — Projets"],
-    ["header.about",'.main-nav a[href="#apropos"]',"Меню — À propos"],
     ["header.contact",'.main-nav a[href="#contact"]',"Меню — Contact"],
     ["hero.eyebrow",".hero .eyebrow","Надпись над PORTFOLIO"],
     ["hero.name",".hero h1","PORTFOLIO"],
@@ -39,10 +38,6 @@
     ["projects.kicker",".projects-section .section-kicker","Sélection"],
     ["projects.title",".projects-section .section-heading h2","Заголовок Projets"],
     ["projects.note",".section-note","Описание проектов"],
-    ["about.kicker",".about-section .section-kicker","Profil"],
-    ["about.title",".about-label h2","À propos"],
-    ["about.lead",".about-lead","Главный текст À propos"],
-    ["about.text",".about-copy > p:not(.about-lead)","Текст À propos"],
     ["contact.kicker",".contact-section .section-kicker","Contact"],
     ["contact.title",".contact-section h2","Un projet, une idée ?"],
     ["contact.mail",".contact-mail","Почта внизу"],
@@ -171,8 +166,6 @@
       addTarget("project."+id+".year",spans[1],"Проект — год");
     }
   });
-
-  document.querySelectorAll(".skills span").forEach((el,i)=>addTarget("about.skill."+i,el,"Навык "+(i+1)));
 
   const panel=document.createElement("aside");
   panel.className="pe-panel";
