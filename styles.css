@@ -54,6 +54,9 @@ img{display:block;max-width:100%}
 .project-visual{position:relative;aspect-ratio:16/10;background:var(--soft);overflow:hidden}
 .project-visual img{width:100%;height:100%;object-fit:cover;transition:transform .35s ease}
 .project-button:hover .project-visual img{transform:scale(1.018)}
+.project-button[data-project="ajam"] .project-visual{display:grid;place-items:center;background:#fff}
+.project-button[data-project="ajam"] .project-visual img{display:block;width:100%;height:auto;max-height:100%;object-fit:contain;outline:1px solid #333;outline-offset:-1px}
+.project-button[data-project="ajam"]:hover .project-visual img{transform:none}
 .project-info{padding-top:18px}
 .project-line{display:flex;justify-content:space-between;gap:20px;padding-bottom:12px;border-bottom:1px solid var(--line);font-size:10px;letter-spacing:.18em;text-transform:uppercase}
 .project-info h3{margin:18px 0 6px;color:#FD8ED8;font-family:"Medino",var(--serif);font-size:clamp(34px,4vw,58px);font-weight:400;line-height:1}
@@ -87,6 +90,7 @@ img{display:block;max-width:100%}
 .modal-close{width:48px;height:48px;border:1px solid var(--line);background:white;font-size:30px;line-height:1;cursor:pointer}
 .modal-description{max-width:800px;margin:35px 0 45px;color:#555;font-size:18px}
 .modal-gallery{display:grid;gap:0}
+.project-modal[data-project="ajam"] .modal-gallery{gap:24px}
 .modal-image-wrap{margin:0;background:#f4f4f4}
 .modal-image-wrap img{width:100%;height:auto}
 .modal-empty{min-height:420px;display:grid;place-items:center;text-align:center;background:#f3eef1;padding:50px}
@@ -104,6 +108,7 @@ img{display:block;max-width:100%}
 }
 @media(max-width:620px){
   .site-header{padding:14px 5vw}
+  .project-modal[data-project="ajam"] .modal-gallery{gap:14px}
   .brand-name{display:none}
   .main-nav{gap:16px;font-size:10px}
   .hero,.projects-section,.about-section,.contact-section,.site-footer{width:90vw}
